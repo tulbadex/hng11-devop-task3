@@ -108,7 +108,7 @@ def messaging():
     
     return 'No action taken'
 
-@app.route('/log')
+@app.route('/logs')
 def get_logs():
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     """ if os.path.exists(log_dir):

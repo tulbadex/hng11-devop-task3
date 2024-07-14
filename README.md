@@ -107,7 +107,7 @@ This project is a Flask-based web application that sends emails asynchronously u
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        location /log {
+        location /logs {
             alias /var/log/messaging_system.log;
             default_type text/plain;
             add_header Content-Type text/plain;
@@ -149,7 +149,7 @@ This project is a Flask-based web application that sends emails asynchronously u
 - Visit `http://localhost` to access the application.
 - Use `http://localhost?sendmail=recipient@example.com` to queue an email.
 - Use `http://localhost?talktome` to log the current time.
-- Use `http://localhost/log` to see logs.
+- Use `http://localhost/logs` to see logs.
 
 ## Logging
 
