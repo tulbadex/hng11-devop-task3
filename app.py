@@ -54,8 +54,29 @@ app.wsgi_app = ProxyFix(
 
 @celery.task
 def send_async_email(recipient):
-    msg = Message('Hello', sender='tulbadex@gmail.com', recipients=[recipient])
-    msg.body = 'This is a test email sent from a Celery task'
+    msg = Message(
+        subject='Welcome to Messaging System',
+        sender='tulbadex@gmail.com',
+        recipients=[recipient]
+    )
+    
+    # Extract the user's name from the email if possible
+    user_name = recipient.split('@')[0].capitalize()
+
+    msg.body = f"""
+    Hi {user_name},
+
+    Welcome to the Messaging System!
+
+    We are thrilled to have you here. This application demonstrates how to build a messaging system with RabbitMQ, Celery, and Python. 
+    Using Celery, you can send tasks asynchronously, ensuring your application remains responsive.
+
+    Thank you for joining us on this journey. We hope you find this application helpful and informative.
+
+    Best regards,
+    The Messaging System Team
+    """
+
     with app.app_context():
         mail.send(msg)
 
@@ -87,7 +108,7 @@ def messaging():
     return 'No action taken'
 
 @app.route('/log')
-def logs():
+def get_logs():
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     """ if os.path.exists(log_dir):
         with open(log_dir, 'r') as file:
