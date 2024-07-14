@@ -40,7 +40,7 @@ if not os.path.exists(log_dir):
 
 # # Logger configuration
 logging.basicConfig(filename=log_dir,level=logging.INFO)
-handler = RotatingFileHandler(log_dir, maxBytes=1024*1024, backupCount=5)
+handler = RotatingFileHandler(log_dir, maxBytes=1024*1024, backupCount=3)
 handler.setLevel(logging.INFO)
 # formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
