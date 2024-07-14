@@ -73,6 +73,7 @@ This project is a Flask-based web application that sends emails asynchronously u
     SMTP_MAIL_USE_SSL=False
     RABBITMQ_ADDRESS=pyamqp://guest@localhost//
     REDIS_ADDRESS=redis://localhost:6379/0
+    CELERY_RESULT_BACKEND=rpc://
     ```
 
 5. **Generate SSL certificates:**

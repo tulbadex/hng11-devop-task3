@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 import subprocess
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -24,12 +25,13 @@ mail = Mail(app)
 
 # Celery configuration
 app.config['CELERY_BROKER_URL'] = os.getenv("RABBITMQ_ADDRESS")
-app.config['CELERY_RESULT_BACKEND'] = os.getenv("REDIS_ADDRESS")
+app.config['CELERY_RESULT_BACKEND'] = os.getenv("CELERY_RESULT_BACKEND")
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
     
 log_dir = '/var/log/messaging_system.log'
+os.makedirs(os.path.dirname(log_dir), exist_ok=True)
 
 # Ensure the log file exists
 if not os.path.exists(log_dir):
@@ -38,6 +40,12 @@ if not os.path.exists(log_dir):
 
 # # Logger configuration
 logging.basicConfig(filename=log_dir,level=logging.INFO)
+handler = RotatingFileHandler(log_dir, maxBytes=1024*1024, backupCount=5)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
 
 # Apply the ProxyFix middleware
 app.wsgi_app = ProxyFix(
@@ -52,10 +60,9 @@ def send_async_email(recipient):
         mail.send(msg)
 
 def log_with_sudo(log_message):
-    log_file = "/var/log/messaging_system.log"
     try:
         # Use subprocess to call sudo tee without password prompt
-        process = subprocess.Popen(['sudo', 'tee', '-a', log_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(['sudo', 'tee', '-a', log_dir], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.communicate(input=f"{log_message}\n".encode())
     except Exception as e:
         print(f"Failed to write log: {e}")
@@ -68,11 +75,12 @@ def messaging():
     if sendmail:
         recipient = sendmail.replace('mailto:', '') if sendmail.startswith('mailto:') else sendmail
         send_async_email.apply_async(args=[recipient])
+        app.logger.info(f"Email queued for {recipient}")
         return f"Email has been queued for {recipient}"
     
     if 'talktome' in request.args:
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        logging.info(f'Current time logged: {current_time}')
+        app.logger.info(f'Current time logged: {current_time}')
         # log_with_sudo(f'Current time logged: {current_time}')
         return f'Current time logged: {current_time}'
     
@@ -81,7 +89,7 @@ def messaging():
 @app.route('/log')
 def logs():
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if os.path.exists(log_dir):
+    """ if os.path.exists(log_dir):
         with open(log_dir, 'r') as file:
             logs = file.read()
         logging.info(f'Logged access at: {current_time}')
@@ -91,7 +99,16 @@ def logs():
         error_msg = f'Logged file not accessible at: {current_time}'
         logging.error(error_msg)
         # return error_msg, 404
-        return abort(404, description=error_msg)
+        return abort(404, description=error_msg) """
+    try:
+        with open(log_dir, 'r') as f:
+            log_content = f.read()
+        app.logger.info(f"Log file accessed at {datetime.now()}")
+        return send_file(log_content, mimetype='text/plain')
+    except Exception as e:
+        error_msg = f'Logged file not accessible at: {current_time}'
+        app.logger.error(error_msg)
+        return error_msg, 404
     
 
 if __name__ == '__main__':
