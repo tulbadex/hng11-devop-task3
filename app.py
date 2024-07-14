@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_file, abort, Response
 from celery import Celery, Task
 from flask_mail import Mail, Message
 import logging
@@ -30,6 +30,11 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
     
 log_dir = '/var/log/messaging_system.log'
+
+# Ensure the log file exists
+if not os.path.exists(log_dir):
+    with open(log_dir, 'w') as f:
+        pass
 
 # # Logger configuration
 logging.basicConfig(filename=log_dir,level=logging.INFO)
@@ -72,6 +77,22 @@ def messaging():
         return f'Current time logged: {current_time}'
     
     return 'No action taken'
+
+@app.route('/log')
+def logs():
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if os.path.exists(log_dir):
+        with open(log_dir, 'r') as file:
+            logs = file.read()
+        logging.info(f'Logged access at: {current_time}')
+        # return Response(logs, mimetype='text/plain')
+        return send_file(logs, mimetype='text/plain')
+    else:
+        error_msg = f'Logged file not accessible at: {current_time}'
+        logging.error(error_msg)
+        # return error_msg, 404
+        return abort(404, description=error_msg)
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

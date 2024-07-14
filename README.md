@@ -105,6 +105,12 @@ This project is a Flask-based web application that sends emails asynchronously u
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
         }
+
+        location /log {
+            alias /var/log/messaging_system.log;
+            default_type text/plain;
+            add_header Content-Type text/plain;
+        }
     }
     ```
     3. **Enable the Configuration:**
@@ -142,6 +148,7 @@ This project is a Flask-based web application that sends emails asynchronously u
 - Visit `http://localhost` to access the application.
 - Use `http://localhost?sendmail=recipient@example.com` to queue an email.
 - Use `http://localhost?talktome` to log the current time.
+- Use `http://localhost/log` to see logs.
 
 ## Logging
 
@@ -152,7 +159,14 @@ Run the following commands to set the appropriate permissions:
     sudo touch /var/log/messaging_system.log
     sudo chown yourusername:yourusername /var/log/messaging_system.log
     sudo chmod 664 /var/log/messaging_system.log
+    sudo usermod -a -G yourusername $USER
     ```
+
+To get your username
+- whoami
+- $USER
+
+This commands will print out your username
 
 ## License
 
